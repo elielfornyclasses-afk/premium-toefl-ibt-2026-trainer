@@ -14,18 +14,9 @@ const App: React.FC = () => {
   const [selectedWeek, setSelectedWeek] = useState<WeekData | null>(null);
   const [selectedPhaseId, setSelectedPhaseId] = useState<number>(1);
   
-  // Lista de códigos autorizados persistida no navegador
-  const [authorizedCodes, setAuthorizedCodes] = useState<string[]>(() => {
-    const saved = localStorage.getItem('toefl_authorized_codes');
-    const initial = saved ? JSON.parse(saved) : INITIAL_PERMANENT_KEYS;
-    // Garante que o código mestre sempre esteja na lista
-    if (!initial.includes('INNER-TEST-24H')) {
-      initial.push('INNER-TEST-24H');
-    }
-    return initial;
-  });
+  const authorizedCodes = INITIAL_PERMANENT_KEYS;
+  const MASTER_ADMIN_KEY = 'INNER-TEST-24H';
 
-  // Progresso e estado do usuário atual
   const [progress, setProgress] = useState<UserProgress>(() => {
     const saved = localStorage.getItem('toefl_trainer_progress');
     return saved ? JSON.parse(saved) : {
@@ -36,37 +27,39 @@ const App: React.FC = () => {
     };
   });
 
-  const [newCode, setNewCode] = useState('');
-
-  // Sincroniza códigos autorizados com o localStorage
   useEffect(() => {
-    localStorage.setItem('toefl_authorized_codes', JSON.stringify(authorizedCodes));
-  }, [authorizedCodes]);
-
-  // Checagem de sessão existente ao carregar
-  useEffect(() => {
-    if (progress.accessCode && authorizedCodes.includes(progress.accessCode)) {
-      setIsAuthenticated(true);
+    if (progress.accessCode) {
+      const isValid = authorizedCodes.includes(progress.accessCode);
+      if (isValid) {
+        setIsAuthenticated(true);
+        const isAdmin = progress.accessCode === MASTER_ADMIN_KEY;
+        if (progress.isAdmin !== isAdmin) {
+          setProgress(prev => ({ ...prev, isAdmin }));
+        }
+      } else {
+        handleLogout();
+      }
     }
   }, []);
 
-  // Salva progresso do aluno
   useEffect(() => {
     localStorage.setItem('toefl_trainer_progress', JSON.stringify(progress));
   }, [progress]);
 
   const handleLogin = (code: string) => {
     const upperCode = code.trim().toUpperCase();
+    
     if (authorizedCodes.includes(upperCode)) {
-      const isAdmin = upperCode === 'INNER-TEST-24H';
+      const isAdmin = upperCode === MASTER_ADMIN_KEY;
+      
       setProgress(prev => ({ 
         ...prev, 
         accessCode: upperCode,
         isAdmin: isAdmin
       }));
+      
       setIsAuthenticated(true);
-      // Se for admin, redireciona para a aba de alunos automaticamente
-      if (isAdmin) setCurrentView('admin');
+      setCurrentView(isAdmin ? 'admin' : 'dashboard');
       return true;
     }
     return false;
@@ -76,20 +69,7 @@ const App: React.FC = () => {
     setProgress({ name: '', accessCode: '', completedWeekIds: [], isAdmin: false });
     setIsAuthenticated(false);
     setCurrentView('dashboard');
-  };
-
-  const addAccessCode = (e: React.FormEvent) => {
-    e.preventDefault();
-    const cleanCode = newCode.trim().toUpperCase();
-    if (cleanCode && !authorizedCodes.includes(cleanCode)) {
-      setAuthorizedCodes(prev => [...prev, cleanCode]);
-      setNewCode('');
-    }
-  };
-
-  const removeAccessCode = (code: string) => {
-    if (code === 'INNER-TEST-24H') return; // Não permite remover o mestre
-    setAuthorizedCodes(prev => prev.filter(c => c !== code));
+    localStorage.removeItem('toefl_trainer_progress');
   };
 
   const startSession = (week: WeekData, phaseId: number) => {
@@ -136,76 +116,57 @@ const App: React.FC = () => {
       case 'admin':
         return (
           <div className="max-w-5xl mx-auto py-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div className="flex justify-between items-center mb-8">
-              <div>
-                <h2 className="text-4xl font-black text-slate-900 tracking-tight">Gestão de Alunos</h2>
-                <p className="text-slate-500 font-medium">Controle quem tem acesso à plataforma TOEFL 2026.</p>
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              <div className="lg:col-span-1">
-                <div className="bg-white rounded-[2rem] border border-slate-200 p-8 shadow-sm">
-                  <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-6">Novo Acesso</h3>
-                  <form onSubmit={addAccessCode} className="space-y-4">
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Código de Aluno</label>
-                      <input 
-                        type="text"
-                        placeholder="EX: ALUNO-JOAO-2025"
-                        value={newCode}
-                        onChange={(e) => setNewCode(e.target.value.toUpperCase())}
-                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 font-bold text-slate-700 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all"
-                      />
-                    </div>
-                    <button className="w-full bg-blue-600 text-white py-4 rounded-2xl font-black hover:bg-blue-700 transition shadow-xl shadow-blue-500/20 active:scale-[0.98]">
-                      Gerar Acesso
-                    </button>
-                  </form>
-                  <p className="text-[10px] text-slate-400 mt-6 leading-relaxed">
-                    Dica: Use nomes fáceis para os alunos lembrarem, como "TURMA-A-01".
-                  </p>
+            <div className="bg-white rounded-[3rem] border border-slate-200 p-12 shadow-sm">
+              <div className="flex justify-between items-start mb-10">
+                <div>
+                  <h2 className="text-4xl font-black text-slate-900 tracking-tight italic">Inner Circle</h2>
+                  <p className="text-slate-500 font-medium mt-2">Gestão Estratégica de Alunos</p>
+                </div>
+                <div className="bg-blue-600 text-white px-6 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-lg shadow-blue-500/20">
+                  Administrador
                 </div>
               </div>
 
-              <div className="lg:col-span-2">
-                <div className="bg-white rounded-[2rem] border border-slate-200 shadow-sm overflow-hidden">
-                  <div className="px-8 py-6 border-b bg-slate-50/50 flex justify-between items-center">
-                    <h3 className="text-xs font-black uppercase tracking-widest text-slate-400">Códigos Ativos ({authorizedCodes.length})</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+                <div className="space-y-6">
+                  <h3 className="text-xs font-black uppercase tracking-widest text-slate-400">Fluxo de Cadastro</h3>
+                  <div className="bg-slate-50 p-8 rounded-3xl border border-slate-100 space-y-6">
+                    <p className="text-sm text-slate-600 leading-relaxed">
+                      Este sistema opera via <span className="font-bold text-slate-900">Configuração como Código</span>. Para adicionar alunos de forma segura e permanente:
+                    </p>
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center text-[10px] font-black">1</div>
+                        <span className="text-xs font-bold text-slate-700">Abra o arquivo <code className="bg-slate-200 px-1 rounded text-blue-600">data/access.ts</code> no GitHub.</span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center text-[10px] font-black">2</div>
+                        <span className="text-xs font-bold text-slate-700">Adicione o código do aluno na lista de chaves.</span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center text-[10px] font-black">3</div>
+                        <span className="text-xs font-bold text-slate-700">Faça o Commit. O Netlify atualizará em segundos.</span>
+                      </div>
+                    </div>
                   </div>
-                  <div className="divide-y divide-slate-100 max-h-[600px] overflow-y-auto">
+                </div>
+
+                <div>
+                  <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-6">Alunos com Acesso ({authorizedCodes.length})</h3>
+                  <div className="bg-white border rounded-3xl divide-y overflow-hidden max-h-[440px] overflow-y-auto shadow-sm">
                     {authorizedCodes.map(code => (
-                      <div key={code} className="flex items-center justify-between p-6 hover:bg-slate-50 transition-colors group">
-                        <div className="flex items-center gap-5">
-                          <div className={`w-3 h-3 rounded-full ${code === 'INNER-TEST-24H' ? 'bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.5)]' : 'bg-green-500'}`}></div>
-                          <div>
-                            <span className="font-mono font-black text-slate-700 text-xl tracking-tight">{code}</span>
-                            {code === 'INNER-TEST-24H' && (
-                              <div className="flex gap-2 mt-1">
-                                <span className="text-[9px] font-black uppercase tracking-widest bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">Administrador</span>
-                                <span className="text-[9px] font-black uppercase tracking-widest bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full">Chave Mestra</span>
-                              </div>
-                            )}
-                          </div>
+                      <div key={code} className="p-5 flex items-center justify-between group hover:bg-slate-50 transition-all">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-2 h-2 rounded-full ${code === MASTER_ADMIN_KEY ? 'bg-blue-600' : 'bg-green-500'}`}></div>
+                          <span className="font-mono font-black text-slate-700 tracking-tighter">{code}</span>
                         </div>
-                        {code !== 'INNER-TEST-24H' && (
-                          <button 
-                            onClick={() => removeAccessCode(code)}
-                            className="bg-red-50 text-red-400 hover:bg-red-500 hover:text-white transition-all p-3 rounded-xl"
-                            title="Excluir Acesso"
-                          >
-                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
-                          </button>
+                        {code === MASTER_ADMIN_KEY ? (
+                          <span className="text-[9px] font-black text-blue-600 bg-blue-50 px-3 py-1 rounded-full uppercase tracking-widest">Master</span>
+                        ) : (
+                          <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Ativo</span>
                         )}
                       </div>
                     ))}
-                    {authorizedCodes.length === 0 && (
-                      <div className="p-20 text-center">
-                        <p className="text-slate-400 font-bold">Nenhum código cadastrado.</p>
-                      </div>
-                    )}
                   </div>
                 </div>
               </div>
@@ -214,16 +175,29 @@ const App: React.FC = () => {
         );
       case 'stats':
         return (
-          <div className="max-w-4xl mx-auto py-10">
-            <h2 className="text-3xl font-black mb-8">Análise de Performance</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-white p-8 rounded-[2.5rem] border shadow-sm">
-                <h3 className="text-slate-400 font-black uppercase tracking-widest text-[10px] mb-4">Módulos Concluídos</h3>
-                <p className="text-5xl font-black text-slate-900">{progress.completedWeekIds.length}</p>
+          <div className="max-w-4xl mx-auto py-10 animate-in fade-in duration-700">
+            <h2 className="text-4xl font-black mb-10 tracking-tight italic">Performance Insight</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="bg-white p-10 rounded-[3rem] border shadow-sm relative overflow-hidden group">
+                <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:opacity-10 transition-opacity">
+                  <svg className="w-20 h-20" fill="currentColor" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14h-2v-2h2v2zm0-4h-2v-2h2v2zm0-4h-2V7h2v2z" /></svg>
+                </div>
+                <h3 className="text-slate-400 font-black uppercase tracking-[0.2em] text-[10px] mb-4">Módulos Concluídos</h3>
+                <p className="text-7xl font-black text-slate-900 leading-none">{progress.completedWeekIds.length}</p>
+                <div className="mt-6 flex items-center gap-2 text-emerald-600 font-bold text-sm">
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 10l7-7m0 0l7 7m-7-7v18" /></svg>
+                  <span>Progresso Constante</span>
+                </div>
               </div>
-              <div className="bg-white p-8 rounded-[2.5rem] border shadow-sm">
-                <h3 className="text-slate-400 font-black uppercase tracking-widest text-[10px] mb-4">Domínio do Curso</h3>
-                <p className="text-5xl font-black text-blue-600">{Math.round((progress.completedWeekIds.length / 24) * 100)}%</p>
+              <div className="bg-slate-900 p-10 rounded-[3rem] shadow-xl relative overflow-hidden group">
+                <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity">
+                  <svg className="w-20 h-20 text-blue-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L1 21h22L12 2zm0 3.45L20.55 19H3.45L12 5.45z" /></svg>
+                </div>
+                <h3 className="text-slate-500 font-black uppercase tracking-[0.2em] text-[10px] mb-4">Nível de Domínio</h3>
+                <p className="text-7xl font-black text-blue-500 leading-none">{Math.round((progress.completedWeekIds.length / 24) * 100)}%</p>
+                <div className="mt-6 w-full bg-white/10 h-2 rounded-full overflow-hidden">
+                   <div className="bg-blue-600 h-full rounded-full transition-all duration-1000" style={{ width: `${(progress.completedWeekIds.length / 24) * 100}%` }}></div>
+                </div>
               </div>
             </div>
           </div>
