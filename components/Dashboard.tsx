@@ -78,6 +78,31 @@ export const Dashboard: React.FC<DashboardProps> = ({ phases, progress, onSelect
         </div>
       </section>
 
+      {/* Admin Quick Link - VISÍVEL APENAS PARA QUEM LOGAR COM A CHAVE MESTRA */}
+      {progress.isAdmin && (
+        <section className="animate-in fade-in slide-in-from-top-4 duration-700">
+          <button 
+            onClick={onToggleAdmin}
+            className="w-full bg-slate-900 border border-slate-800 p-8 rounded-[2.5rem] flex items-center justify-between group hover:bg-black transition-all shadow-xl shadow-slate-900/10"
+          >
+            <div className="flex items-center gap-6">
+              <div className="w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-blue-500/20 transform group-hover:scale-110 transition-transform">
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
+              </div>
+              <div className="text-left">
+                <h3 className="text-xl font-black text-white italic tracking-tight">Painel Administrativo</h3>
+                <p className="text-slate-500 font-medium text-sm">Gerenciar acessos e visualizar base de alunos</p>
+              </div>
+            </div>
+            <div className="w-12 h-12 rounded-full border border-white/10 flex items-center justify-center group-hover:bg-blue-600 group-hover:border-blue-500 transition-all">
+              <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M13 5l7 7-7 7" /></svg>
+            </div>
+          </button>
+        </section>
+      )}
+
       {/* Phase Selection Tabs */}
       <section>
         <div className="flex flex-wrap gap-2 mb-8 bg-slate-100 p-1.5 rounded-2xl">
