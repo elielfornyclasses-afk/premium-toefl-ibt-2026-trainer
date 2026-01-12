@@ -12,7 +12,8 @@ export const INITIAL_PERMANENT_KEYS = [
   'INNER-TEST-24H',      // CHAVE MESTRA (ADMIN)
   'ALUNO-EXEMPLO-01',    // Exemplo de código de aluno
   'TURMA-A-2025',        // Exemplo de código de turma
-  'JOAO-TOEFL-PREMIUM',  // Exemplo de código individual
+  'JOAO-TOEFL-PREMIUM',
+  'CHRISTIAN-TOEFL-PREMIUM'// Exemplo de código individual
   // Adicione novos códigos abaixo desta linha (Sempre entre aspas e com vírgula no final):
   
 ];
