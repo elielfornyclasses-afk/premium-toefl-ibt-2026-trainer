@@ -1,0 +1,7 @@
+{
+  "name": "Premium TOEFL iBT 2026 Trainer",
+  "description": "A comprehensive TOEFL preparation course trainer focusing on linguistic clarity, cognitive flow, and the 2026 iBT format. Features real-time voice feedback via Gemini Live API.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
