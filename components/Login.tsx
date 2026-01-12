@@ -10,11 +10,6 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  // Atalho para facilitar a vida do administrador sem expor um botão público
-  const handleLogoClick = () => {
-    setCode('INNER-TEST-24H');
-  };
-
   const executeLogin = (accessCode: string) => {
     setIsLoading(true);
     setError('');
@@ -43,14 +38,10 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
       <div className="relative z-10 w-full max-w-md">
         <div className="text-center mb-10">
-          {/* O logotipo agora funciona como um botão de preenchimento para o dono do site */}
-          <button 
-            onClick={handleLogoClick}
-            title="Acesso Administrativo"
-            className="bg-blue-600 w-16 h-16 rounded-2xl flex items-center justify-center text-xl font-black shadow-2xl shadow-blue-500/30 mx-auto mb-6 italic transform hover:scale-110 active:scale-95 transition-all duration-300"
-          >
+          {/* Logotipo agora puramente estético */}
+          <div className="bg-blue-600 w-16 h-16 rounded-2xl flex items-center justify-center text-xl font-black shadow-2xl shadow-blue-500/30 mx-auto mb-6 italic select-none">
             IV
-          </button>
+          </div>
           <h1 className="text-4xl font-black tracking-tight mb-2 italic">Inner Voice</h1>
           <p className="text-slate-500 font-medium tracking-wide">Portal do Aluno • TOEFL iBT 2026</p>
         </div>
